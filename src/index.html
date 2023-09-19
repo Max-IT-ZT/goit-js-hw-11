@@ -3,10 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./css/style.css" />
     <title>Homework 11</title>
+    <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
-    <script src="index.js" type="module"></script>
+    <header>
+      <h1>Image Search App</h1>
+      <form class="search-form" id="search-form">
+        <input
+          type="text"
+          name="searchQuery"
+          autocomplete="off"
+          placeholder="Search images..."
+        />
+        <button type="submit">Search</button>
+      </form>
+    </header>
+    <div class="gallery"></div>
+    <button type="button" class="load-more">Load more</button>
+    <div class="message"></div>
+
+    <script src="./index.js" type="module"></script>
   </body>
 </html>
