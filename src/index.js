@@ -17,8 +17,13 @@ searchForm.addEventListener('submit', async e => {
   searchQuery = e.target.searchQuery.value.trim();
   page = 1;
   gallery.innerHTML = '';
+  hasShownSuccessMessage = false;
   loadMoreImages();
 });
+
+function showSuccessMessage(totalHits) {
+  Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
+}
 
 async function loadMoreImages() {
   if (isLoading) return;
@@ -41,7 +46,7 @@ async function loadMoreImages() {
     }
 
     if (!hasShownSuccessMessage) {
-      Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
+      showSuccessMessage(data.totalHits);
       hasShownSuccessMessage = true;
     }
 
