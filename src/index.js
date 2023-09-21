@@ -1,26 +1,30 @@
+import Notiflix from 'notiflix';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+
 const searchForm = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
-const loadMoreButton = document.querySelector('.load-more');
-const message = document.querySelector('.message');
 const apiKey = '39546340-4a7e93b4b9c9fbb423c89ebde';
 let page = 1;
 let searchQuery = '';
+let isLoading = false;
+let hasShownSuccessMessage = false;
+
+let lightbox = new SimpleLightbox('.gallery a');
 
 searchForm.addEventListener('submit', async e => {
   e.preventDefault();
   searchQuery = e.target.searchQuery.value.trim();
   page = 1;
   gallery.innerHTML = '';
-  loadMoreButton.style.display = 'none';
-  searchImages();
+  loadMoreImages();
 });
 
-loadMoreButton.addEventListener('click', () => {
-  page++;
-  searchImages();
-});
+async function loadMoreImages() {
+  if (isLoading) return;
 
-async function searchImages() {
+  isLoading = true;
+
   const perPage = 40;
   const apiUrl = `https://pixabay.com/api/?key=${apiKey}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`;
 
@@ -29,18 +33,25 @@ async function searchImages() {
     const data = await response.json();
 
     if (data.hits.length === 0) {
-      message.textContent =
-        'Sorry, there are no images matching your search query. Please try again.';
+      Notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      isLoading = false;
       return;
     }
 
-    message.textContent = `Hooray! We found ${data.totalHits} images.`;
+    if (!hasShownSuccessMessage) {
+      Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
+      hasShownSuccessMessage = true;
+    }
 
     data.hits.forEach(image => {
       const photoCard = document.createElement('div');
       photoCard.classList.add('photo-card');
       photoCard.innerHTML = `
-                <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+                <a href="${image.largeImageURL}" data-lightbox="image">
+                  <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+                </a>
                 <div class="info">
                     <p class="info-item"><b>Likes</b> ${image.likes}</p>
                     <p class="info-item"><b>Views</b> ${image.views}</p>
@@ -52,15 +63,31 @@ async function searchImages() {
     });
 
     if (data.totalHits > page * perPage) {
-      loadMoreButton.style.display = 'block';
+      page++;
     } else {
-      loadMoreButton.style.display = 'none';
-      message.textContent =
-        "We're sorry, but you've reached the end of search results.";
+      Notiflix.Notify.failure(
+        "We're sorry, but you've reached the end of search results."
+      );
+      window.removeEventListener('scroll', handleScroll);
     }
   } catch (error) {
     console.error('Error fetching data:', error);
-    message.textContent =
-      'An error occurred while fetching data. Please try again later.';
+    Notiflix.Notify.failure(
+      'An error occurred while fetching data. Please try again later.'
+    );
+  } finally {
+    isLoading = false;
+    lightbox.refresh();
   }
 }
+
+function handleScroll() {
+  if (
+    window.innerHeight + window.scrollY >=
+    document.documentElement.scrollHeight - 100
+  ) {
+    loadMoreImages();
+  }
+}
+
+window.addEventListener('scroll', handleScroll);
