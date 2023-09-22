@@ -1,23 +1,28 @@
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+import * as api from './js/api.js';
+import * as gallery from './js/gallery.js';
 
 const searchForm = document.getElementById('search-form');
-const gallery = document.querySelector('.gallery');
-const apiKey = '39546340-4a7e93b4b9c9fbb423c89ebde';
 let page = 1;
 let searchQuery = '';
 let isLoading = false;
-let hasShownSuccessMessage = false;
 
-let lightbox = new SimpleLightbox('.gallery a');
+let lightbox;
 
 searchForm.addEventListener('submit', async e => {
   e.preventDefault();
   searchQuery = e.target.searchQuery.value.trim();
+
+  if (!searchQuery) {
+    Notiflix.Notify.failure('Please enter a query.');
+    return gallery.clearGallery();
+  }
+
   page = 1;
-  gallery.innerHTML = '';
-  hasShownSuccessMessage = false;
+  gallery.clearGallery();
+  isLoading = false;
   loadMoreImages();
 });
 
@@ -30,12 +35,8 @@ async function loadMoreImages() {
 
   isLoading = true;
 
-  const perPage = 40;
-  const apiUrl = `https://pixabay.com/api/?key=${apiKey}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${perPage}`;
-
   try {
-    const response = await fetch(apiUrl);
-    const data = await response.json();
+    const data = await api.fetchImages(searchQuery, page);
 
     if (data.hits.length === 0) {
       Notiflix.Notify.failure(
@@ -45,29 +46,13 @@ async function loadMoreImages() {
       return;
     }
 
-    if (!hasShownSuccessMessage) {
+    if (page === 1) {
       showSuccessMessage(data.totalHits);
-      hasShownSuccessMessage = true;
     }
 
-    data.hits.forEach(image => {
-      const photoCard = document.createElement('div');
-      photoCard.classList.add('photo-card');
-      photoCard.innerHTML = `
-                <a href="${image.largeImageURL}" data-lightbox="image">
-                  <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
-                </a>
-                <div class="info">
-                    <p class="info-item"><b>Likes</b> ${image.likes}</p>
-                    <p class="info-item"><b>Views</b> ${image.views}</p>
-                    <p class="info-item"><b>Comments</b> ${image.comments}</p>
-                    <p class="info-item"><b>Downloads</b> ${image.downloads}</p>
-                </div>
-            `;
-      gallery.appendChild(photoCard);
-    });
+    gallery.createGallery(data.hits);
 
-    if (data.totalHits > page * perPage) {
+    if (data.totalHits > page * 40) {
       page++;
     } else {
       Notiflix.Notify.failure(
@@ -96,3 +81,4 @@ function handleScroll() {
 }
 
 window.addEventListener('scroll', handleScroll);
+lightbox = new SimpleLightbox('.gallery a');
