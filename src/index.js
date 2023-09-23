@@ -8,7 +8,6 @@ const searchForm = document.getElementById('search-form');
 let page = 1;
 let searchQuery = '';
 let isLoading = false;
-
 let lightbox;
 
 searchForm.addEventListener('submit', async e => {
@@ -17,12 +16,12 @@ searchForm.addEventListener('submit', async e => {
 
   if (!searchQuery) {
     Notiflix.Notify.failure('Please enter a query.');
-    return gallery.clearGallery();
+    return;
   }
 
   page = 1;
-  gallery.clearGallery();
   isLoading = false;
+  gallery.clearGallery();
   loadMoreImages();
 });
 
@@ -42,6 +41,7 @@ async function loadMoreImages() {
       Notiflix.Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
       );
+      gallery.clearGallery();
       isLoading = false;
       return;
     }
@@ -54,11 +54,11 @@ async function loadMoreImages() {
 
     if (data.totalHits > page * 40) {
       page++;
+      window.addEventListener('scroll', handleScroll);
     } else {
       Notiflix.Notify.failure(
         "We're sorry, but you've reached the end of search results."
       );
-      window.removeEventListener('scroll', handleScroll);
     }
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -77,8 +77,8 @@ function handleScroll() {
     document.documentElement.scrollHeight - 100
   ) {
     loadMoreImages();
+    window.removeEventListener('scroll', handleScroll);
   }
 }
 
-window.addEventListener('scroll', handleScroll);
 lightbox = new SimpleLightbox('.gallery a');
